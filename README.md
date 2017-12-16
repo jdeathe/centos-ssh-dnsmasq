@@ -36,6 +36,7 @@ $ dig @127.0.0.54 resolver.dnscrypt.org
 
 ## TODO
 
+- [ ] Add SCMI configuration files.
 - [ ] Add Docker healthcheck.
 - [ ] Add functional tests.
 - [ ] Replace WIP README with content for Docker Hub.
