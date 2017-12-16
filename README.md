@@ -33,3 +33,9 @@ Check the correct IP address is returned for the resolver name `DNSMASQ_RESOLVER
 ```
 $ dig @127.0.0.54 resolver.dnscrypt.org
 ```
+
+## TODO
+
+- [ ] Add Docker healthcheck.
+- [ ] Add functional tests.
+- [ ] Replace WIP README with content for Docker Hub.
