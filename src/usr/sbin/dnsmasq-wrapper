@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+readonly DNSMASQ="/usr/sbin/dnsmasq"
+readonly DNSMASQ_BOOTSTRAP_LOCK_FILE="/var/lock/subsys/dnsmasq-bootstrap"
+
+source /etc/dnsmasq-bootstrap.conf
+
+DNSMASQ_SERVER=""
+if [[ -n ${DNSMASQ_RESOLVER_1} ]]; then
+	if [[ ${DNSMASQ_DNSCRYPT_PROXY} == true ]]; then
+		DNSMASQ_SERVER+="--server=127.0.0.1#5353 "
+	else
+		DNSMASQ_SERVER+="--server=${DNSMASQ_RESOLVER_1} "
+	fi
+fi
+
+if [[ -n ${DNSMASQ_RESOLVER_2} ]]; then
+	if [[ ${DNSMASQ_DNSCRYPT_PROXY} == true ]]; then
+		DNSMASQ_SERVER+="--server=127.0.0.1#5354 "
+	else
+		DNSMASQ_SERVER+="--server=${DNSMASQ_RESOLVER_2} "
+	fi
+fi
+
+DNSMASQ_NO_RESOLV=""
+if [[ -n ${DNSMASQ_SERVER} ]]; then
+	DNSMASQ_NO_RESOLV="--no-resolv "
+fi
+
+while true; do
+	sleep 0.1
+	[[ -e ${DNSMASQ_BOOTSTRAP_LOCK_FILE} ]] || break
+done
+
+exec ${DNSMASQ} \
+	--bogus-priv \
+	--cache-size=10000 \
+	--domain-needed \
+	--keep-in-foreground \
+	--no-daemon \
+	--no-negcache \
+	--no-poll \
+	--proxy-dnssec \
+	--strict-order \
+	${DNSMASQ_NO_RESOLV}${DNSMASQ_SERVER}

@@ -1,0 +1,1 @@
+CentOS-7 7.4 x86_64 - Dnsmasq (dnscrypt-proxy).

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+readonly DNSMASQ_CONFIG_PATH="/etc/dnsmasq.d/dnsmasq.conf"
+
+# Create lock file
+touch /var/lock/subsys/dnsmasq-bootstrap
+
+TIMER_START="$(
+	date +%s.%N
+)"
+
+source /etc/dnsmasq-bootstrap.conf
+
+function set_dnsmasq_config ()
+{
+	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
+	local -r pattern_plain_text='.*(address|server)=.*'
+
+	local file_path=""
+	local value="${1:-}"
+
+	# Get value from file
+	if [[ -n ${value} ]] \
+		&& [[ -s ${value} ]]
+	then
+		file_path="${value}"
+		value="$(
+			cat "${value}"
+		)"
+	fi
+
+	# Decode base64 encoded values
+	if [[ -n ${value} ]] \
+		&& [[ ! -s ${value} ]] \
+		&& [[ ${value} =~ ${pattern_base64} ]]
+	then
+		value="$(
+			base64 -d -i <<< "${value}"
+		)"
+		# Write back decoded value to source file
+		if [[ -n ${file_path} ]] \
+			&& [[ ${file_path} != ${DNSMASQ_CONFIG_PATH} ]]
+		then
+			printf \
+				-- '%s' \
+				"${value}" \
+			> ${file_path}
+		fi
+	fi
+
+	if [[ -n ${value} ]] \
+		&& [[ ! ${value} =~ ${pattern_plain_text} ]]
+	then
+		printf -- \
+			'ERROR: Invalid DNSMASQ_CONFIG\n' \
+			>&2
+		sleep 0.1
+		exit 1
+	elif [[ -n ${value} ]] \
+		&& [[ -n ${file_path} ]] \
+		&& [[ ${file_path} != ${DNSMASQ_CONFIG_PATH} ]]
+	then
+		# Create a sym-link if value is defined in a file
+		ln -sf \
+			${file_path} \
+			${DNSMASQ_CONFIG_PATH}
+	elif [[ -n ${value} ]]
+	then
+		printf \
+			-- '%s' \
+			"${value}" \
+		> ${DNSMASQ_CONFIG_PATH}
+	fi
+}
+
+set_dnsmasq_config \
+	"${DNSMASQ_CONFIG}"
+
+# Delay a little to allow details print
+sleep 0.1
+
+TIMER_TOTAL="$(
+	echo - | awk "\
+	{ T1=\"${TIMER_START}\" } \
+	{ T2=\"$(date +%s.%N)\" } \
+	{ print T2 - T1; }"
+)"
+
+cat <<-EOT
+
+	================================================================================
+	Dnsmasq Details
+	--------------------------------------------------------------------------------
+	resolver 1 : ${DNSMASQ_RESOLVER_1}
+	resolver 2 : ${DNSMASQ_RESOLVER_2}
+	dnssec : ${DNSMASQ_DNSCRYPT_PROXY}
+	
+	$(dnsmasq -v)
+	--------------------------------------------------------------------------------
+	${TIMER_TOTAL}
+
+EOT
+
+# Release lock file
+rm -f /var/lock/subsys/dnsmasq-bootstrap
+
+exit 0

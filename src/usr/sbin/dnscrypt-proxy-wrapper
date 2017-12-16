@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+readonly DNSCRYPT_PROXY="/usr/sbin/dnscrypt-proxy"
+
+source /etc/dnsmasq-bootstrap.conf
+
+case "${1}" in
+	2)
+		LOCAL_ADDRESS="0.0.0.0:5354"
+		RESOLVER_NAME="${DNSMASQ_RESOLVER_2}"
+		;;
+	*)
+		LOCAL_ADDRESS="0.0.0.0:5353"
+		RESOLVER_NAME="${DNSMASQ_RESOLVER_1}"
+		;;
+esac
+
+exec ${DNSCRYPT_PROXY} \
+	--edns-payload-size=4096 \
+	--ephemeral-keys \
+	--local-address=${LOCAL_ADDRESS} \
+	--resolvers-list=/usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv \
+	--resolver-name=${RESOLVER_NAME}
