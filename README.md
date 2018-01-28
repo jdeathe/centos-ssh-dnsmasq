@@ -38,5 +38,6 @@ $ dig @127.0.0.54 resolver.dnscrypt.org
 
 - [ ] Add SCMI configuration files.
 - [ ] Add Docker healthcheck.
+- [ ] Add Dockerfile install/uninstall LABEL values.
 - [ ] Add functional tests.
 - [ ] Replace WIP README with content for Docker Hub.
